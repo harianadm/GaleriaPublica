@@ -2,10 +2,16 @@ package radaelli.chagas.adami.harian.galeriapublica;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
+import android.Manifest;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -18,6 +24,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     /* definindo o btnViewNavigation como atributo para utilizalo como referencia em outros metodos*/
     BottomNavigationView bottomNavigationView;
+    static int RESULT_REQUEST_PERMISSION = 1;
     @Override
 
     protected void onResume(){
@@ -64,4 +71,60 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
     }
+    private void checkForPermissions(List<String> permissions){
+        List<String> permissionsNotGranted = new ArrayList<>();
+        for(String permission : permissions){
+            if(!hasPermission(permission)){
+                permissionsNotGranted.add(permission);
+            }
+        }
+        if(permissionsNotGranted.size()>0){
+            requestPermissions(permissionsNotGranted.toArray(new String[permissionsNotGranted.size()]),RESULT_REQUEST_PERMISSION);
+        }
+        else{
+            MainViewModel vm = new ViewModelProvider(this).get(MainViewModel.class);
+            int navigationOpSelected = vm.getNavigationOpSelected();
+            bottomNavigationView.setSelectedItemId(navigationOpSelected);
+        }
+    }
+
+    private boolean hasPermission(String permission){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            return ActivityCompat.checkSelfPermission(MainActivity.this,permission) == PackageManager.PERMISSION_GRANTED;
+        }
+        return false;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        final List<String> permissionsRejected = new ArrayList<>();
+        if(requestCode == RESULT_REQUEST_PERMISSION){
+            for(String permission : permissions){
+                if(!hasPermission(permission)){
+                    permissionsRejected.add(permission);
+                }
+            }
+        }
+        //exibindo uma mensagem informando q a permissao é necessaria e requisitando novamente
+        if(permissionsRejected.size()>0){
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                if(shouldShowRequestPermissionRationale(permissionsRejected.get(0))){
+                    new AlertDialog.Builder(MainActivity.this).setMessage("Para usar essa app é preciso conceder permissões").setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            requestPermissions(permissionsRejected.toArray(new String[permissionsRejected.size()]), RESULT_REQUEST_PERMISSION);
+                        }
+                    }).create().show();
+                }
+            }
+        }
+        else {
+            MainViewModel vm = new ViewModelProvider(this).get(MainViewModel.class);
+            int navigationOpSelected = vm.getNavigationOpSelected();
+            bottomNavigationView.setSelectedItemId(navigationOpSelected);
+        }
+    }
+
+
 }
