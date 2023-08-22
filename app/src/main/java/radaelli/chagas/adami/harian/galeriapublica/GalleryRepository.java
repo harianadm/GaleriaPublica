@@ -1,15 +1,21 @@
 package radaelli.chagas.adami.harian.galeriapublica;
 
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import radaelli.chagas.adami.harian.galeriapublica.util.Util;
 
 public class GalleryRepository {
 
@@ -43,9 +49,31 @@ public class GalleryRepository {
             //limit, offset
             queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, limit);
             queryArgs.putInt(ContentResolver.QUERY_ARG_OFFSET, offSet);
-            cursor = context.getContentResolver().query(MediaStore.Images /*/**//*)
+            cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, queryArgs, null);
         }
+        else {
+            cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection,
+                    selection,
+                    selectionArgs,
+                    sort + " ASC + LIMIT " + String.valueOf(limit) + " OFFSET " + String.valueOf(offSet));
+        }
+        int idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
+        int nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME);
+        int dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED);
+        int sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE);
+
+        while (cursor.moveToNext()){
+            //pegando os valores da coluna para a imagem fornecida
+            long id = cursor.getLong(idColumn);
+            Uri contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
+            String name = cursor.getString(nameColumn);
+            int dateAdded = cursor.getInt(dateAddedColumn);
+            int size = cursor.getInt(sizeColumn);
+            Bitmap thumb = Util.getBitmap(context, contentUri, w, h);
+
+            //guardando os valores da coluna e do contentUri em um objeto local que representa o media file
+            imageDataList.add(new ImageData(contentUri, thumb, name, new Date(dateAdded*1000L), size));
+        }
+        return imageDataList;
     }
-
-
 }
