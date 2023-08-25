@@ -2,6 +2,12 @@ package radaelli.chagas.adami.harian.galeriapublica;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.paging.ListenableFuturePagingSource;
+import androidx.paging.PagingState;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.FileNotFoundException;
 import java.util.List;
